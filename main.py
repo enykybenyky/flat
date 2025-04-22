@@ -1,12 +1,19 @@
-
 import time
+import os
+from fastapi import FastAPI
+import uvicorn
 from config import MAX_RENT, ROOMS, LOCATION, CHECK_INTERVAL_MINUTES
 from scraper.homegate import fetch_homegate
 from scraper.immospout24 import fetch_immospout24
 from scraper.flatfox import fetch_flatfox
 from email_utils import send_email
 
+app = FastAPI()
 seen_links = set()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, Render!"}
 
 def format_result(results):
     return "\n\n".join([f"{r['title']} - {r['price']} CHF\n{r['rooms']} rooms\n{r['link']}" for r in results])
@@ -25,7 +32,14 @@ def check_new_flats():
     if new_results:
         send_email("Nové byty k pronájmu", format_result(new_results))
 
-if __name__ == "__main__":
+def run_checker():
     while True:
         check_new_flats()
         time.sleep(CHECK_INTERVAL_MINUTES * 60)
+
+if __name__ == "__main__":
+    # Spustí kontrolu nových bytů paralelně s FastAPI
+    import threading
+    threading.Thread(target=run_checker, daemon=True).start()
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
