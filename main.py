@@ -1,5 +1,6 @@
 import time
 import os
+import uvicorn
 from fastapi import FastAPI
 from scraper.homegate import fetch_homegate
 from scraper.immospout24 import fetch_immospout24
